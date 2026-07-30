@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamVoice Booking</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="booking-page">
+        <div class="booking-container">
+            <h1>DREAMVOICE</h1>
+            <div class="line"></div>
+            <p class="subtitle">Vocal Studio</p>
+
+            <h2>Запис на урок вокалу</h2>
+
+            <div class="calendar">
+                <div class="calendar-header">
+                    <button id="prevMonth" type="button">&#8249;</button>
+                    <h3 id="monthYear"></h3>
+                    <button id="nextMonth" type="button">&#8250;</button>
+                </div>
+
+                <div class="weekdays">
+                    <div>Пн</div>
+                    <div>Вт</div>
+                    <div>Ср</div>
+                    <div>Чт</div>
+                    <div>Пт</div>
+                    <div>Сб</div>
+                    <div>Нд</div>
+                </div>
+
+                <div class="calendar-days" id="calendarDays"></div>
+            </div>
+
+            <h2>Оберіть час</h2>
+            <p class="slots-note">
+                Спочатку доступні 11:30, 12:15, 13:00. Інші відкриваються після бронювання сусідніх слотів.
+            </p>
+
+            <div class="slots" id="slotsContainer"></div>
+
+            <p class="selected-info" id="selectedInfo"></p>
+            <p class="status-message" id="statusMessage"></p>
+
+            <form class="form" id="bookingForm">
+                <input type="text" id="name" placeholder="Ваше ім’я" required>
+                <input type="tel" id="phone" placeholder="Ваш телефон" required>
+                <button type="submit" class="confirm" id="confirmBtn">Підтвердити запис</button>
+            </form>
+
+            <p style="margin-top:18px;">
+                <a href="index.html" style="color:#8c6656; text-decoration:none;">← Назад</a>
+            </p>
+        </div>
+    </main>
+
+    <div class="success-popup" id="successPopup">
+        <div class="success-box">
+            <div class="success-icon">🤎</div>
+            <p id="successText"></p>
+            <button class="close-popup" id="closePopup" type="button">Закрити</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
