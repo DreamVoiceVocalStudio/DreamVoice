@@ -4,27 +4,34 @@ let bookings = [];
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwtUAV-2Y8ctiqnRwCw-3TRZUx3V2aPwDmFOI9Ko_equLww8gLXQBlSyWKdiLsYmVTX/exec";
 
-const ALL_SLOTS = [
-    "10:00",
-    "10:45",
-    "11:30",
-    "12:15",
-    "13:00",
-    "13:45",
-    "14:30"
-];
+// Графік роботи (день тижня -> дозволені часи)
+// 0 = неділя, 1 = понеділок, ..., 6 = субота
+const SCHEDULE = {
+    1: ["17:45", "18:30"],      // Понеділок
+    2: ["15:15", "16:00", "16:45", "17:30"],  // Вівторок
+    3: ["17:45", "18:30"],      // Середа
+    4: ["15:15", "16:00", "16:45", "17:30"],  // Четвер
+    5: ["17:45", "18:30"]       // П'ятниця
+    // Субота (6) і неділя (0) - вихідні
+};
 
-const DEFAULT_OPEN_SLOTS = [
-    "11:30",
-    "12:15",
-    "13:00"
-];
+const DEFAULT_OPEN_SLOTS = {
+    1: ["17:45"],
+    2: ["15:15", "16:00"],
+    3: ["17:45"],
+    4: ["15:15", "16:00"],
+    5: ["17:45"]
+};
 
+// Правила розблокування слотів
 const UNLOCK_RULES = {
-    "13:00": "13:45",
-    "13:45": "14:30",
-    "11:30": "10:45",
-    "10:45": "10:00"
+    // Понеділок, середа, п'ятниця
+    "17:45": "18:30",
+    
+    // Вівторок, четвер
+    "15:15": "16:00",
+    "16:00": "16:45",
+    "16:45": "17:30"
 };
 
 const calendarDays = document.querySelector("#calendarDays");
@@ -66,6 +73,12 @@ async function loadBookings() {
     }
 }
 
+// Отримати дозволені часи для дня тижня
+function getAllowedSlots(date) {
+    const weekDay = date.getDay();
+    return SCHEDULE[weekDay] || [];
+}
+
 function renderCalendar() {
     calendarDays.innerHTML = "";
 
@@ -101,7 +114,12 @@ function renderCalendar() {
         const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
         const formattedDate = formatDate(dateObj);
 
-        if ([6, 0, 1].includes(weekDay) || dateOnly < todayOnly) {
+        // Перевірка: чи це робочий день і чи це не в минулому
+        const allowedSlots = getAllowedSlots(dateObj);
+        const isWorkingDay = allowedSlots.length > 0;
+        const isPast = dateOnly < todayOnly;
+
+        if (!isWorkingDay || isPast) {
             button.classList.add("disabled");
             button.disabled = true;
         }
@@ -132,27 +150,50 @@ function getBookedTimes(date) {
 }
 
 function getAvailableSlots(date) {
+    // Отримаємо дату як об'єкт
+    const [day, month, year] = date.split(".").map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    const weekDay = dateObj.getDay();
+
+    // Отримуємо дозволені часи для цього дня
+    const allowedSlots = getAllowedSlots(dateObj);
+    const defaultOpenSlots = DEFAULT_OPEN_SLOTS[weekDay] || [];
     const bookedTimes = getBookedTimes(date);
+
     const availableSet = new Set();
 
-    DEFAULT_OPEN_SLOTS.forEach(slot => {
-        if (!bookedTimes.includes(slot)) {
+    // Додаємо дозволені за замовчуванням слоти
+    defaultOpenSlots.forEach(slot => {
+        if (allowedSlots.includes(slot) && !bookedTimes.includes(slot)) {
             availableSet.add(slot);
         }
     });
 
+    // Розблокуємо слоти за правилами
     bookedTimes.forEach(bookedTime => {
         const unlockedSlot = UNLOCK_RULES[bookedTime];
-        if (unlockedSlot && !bookedTimes.includes(unlockedSlot)) {
+        if (unlockedSlot && 
+            allowedSlots.includes(unlockedSlot) && 
+            !bookedTimes.includes(unlockedSlot)) {
             availableSet.add(unlockedSlot);
         }
     });
 
-    return Array.from(availableSet);
+    return Array.from(availableSet).sort();
 }
 
 function getSlotState(date, time) {
+    // Отримаємо дату як об'єкт
+    const [day, month, year] = date.split(".").map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    
+    const allowedSlots = getAllowedSlots(dateObj);
     const bookedTimes = getBookedTimes(date);
+
+    // Якщо час не дозволено в цей день
+    if (!allowedSlots.includes(time)) {
+        return "hidden"; // Не показуємо цей час
+    }
 
     if (bookedTimes.includes(time)) {
         return "booked";
@@ -170,19 +211,34 @@ function getSlotState(date, time) {
 function renderSlots() {
     slotsContainer.innerHTML = "";
 
-    ALL_SLOTS.forEach((time) => {
+    if (!selectedDate) {
+        const message = document.createElement("p");
+        message.style.color = "#999";
+        message.textContent = "Оберіть дату для перегляду доступних часів";
+        slotsContainer.appendChild(message);
+        return;
+    }
+
+    // Отримаємо дату як об'єкт
+    const [day, month, year] = selectedDate.split(".").map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    
+    const allowedSlots = getAllowedSlots(dateObj);
+
+    if (allowedSlots.length === 0) {
+        const message = document.createElement("p");
+        message.style.color = "#999";
+        message.textContent = "Цей день не є робочим днем";
+        slotsContainer.appendChild(message);
+        return;
+    }
+
+    // Показуємо тільки дозволені часи для цього дня
+    allowedSlots.forEach((time) => {
         const button = document.createElement("button");
         button.type = "button";
         button.classList.add("slot");
         button.dataset.time = time;
-
-        if (!selectedDate) {
-            button.classList.add("locked");
-            button.textContent = time;
-            button.disabled = true;
-            slotsContainer.appendChild(button);
-            return;
-        }
 
         const state = getSlotState(selectedDate, time);
 
@@ -205,7 +261,7 @@ function renderSlots() {
                 renderSlots();
                 updateSelectedInfo();
             });
-        } else {
+        } else if (state === "locked") {
             button.classList.add("locked");
             button.textContent = time;
             button.disabled = true;
