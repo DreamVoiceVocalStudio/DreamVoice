@@ -3,21 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamVoice Vocal Studio</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Технічне обслуговування</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <main class="booking-page">
-        <div class="booking-container">
-            <h1>DREAMVOICE</h1>
-            <div class="line"></div>
-            <p class="subtitle">Vocal Studio</p>
-
-            <h2>Запис на урок вокалу</h2>
-            <p>Оберіть зручну дату та час</p>
-
-            <a href="booking.html" class="home-button">Перейти до запису</a>
-        </div>
-    </main>
+    <div class="container">
+        <h1>⚙️ Технічне обслуговування</h1>
+        <div class="spinner"></div>
+        <p>Сайт тимчасово недоступний</p>
+        <p style="font-size: 0.9em;">Повернемося незабаром...</p>
+    </div>
 </body>
 </html>
