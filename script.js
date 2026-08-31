@@ -66,16 +66,32 @@ scheduleToggle.addEventListener("click", () => {
     scheduleToggle.classList.toggle("active", isHidden);
 });
 
+// ===== ЗАВАНТАЖЕННЯ БРОНЮВАНЬ З ГУГЛ ТАБЛИЦІ =====
 async function loadBookings() {
     try {
         const response = await fetch(API_URL, {
             method: "GET"
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const rawText = await response.text();
+        console.log("RAW RESPONSE from loadBookings:", rawText);
+
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (parseError) {
+            console.error("Помилка парсингу JSON:", parseError);
+            bookings = [];
+            return;
+        }
 
         if (Array.isArray(data)) {
             bookings = data;
+            console.log("Завантажено бронювання:", bookings);
         } else {
             bookings = [];
             console.error("Некоректна відповідь сервера:", data);
@@ -345,6 +361,7 @@ nextMonth.addEventListener("click", () => {
     clearStatus();
 });
 
+// ===== ВІДПРАВКА БРОНЮВАННЯ З НОВИМИ ЗАГОЛОВКАМИ =====
 bookingForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -394,6 +411,7 @@ bookingForm.addEventListener("submit", async (event) => {
 
         console.log("Відправка даних:", bookingData);
 
+        // ===== НОВА ВЕРСІЯ FETCH З ПРАВИЛЬНИМИ ЗАГОЛОВКАМИ =====
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -401,6 +419,11 @@ bookingForm.addEventListener("submit", async (event) => {
             },
             body: JSON.stringify(bookingData)
         });
+
+        // Перевіримо чи відповідь OK
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const rawText = await response.text();
         console.log("RAW RESPONSE:", rawText);
@@ -413,23 +436,29 @@ bookingForm.addEventListener("submit", async (event) => {
             throw new Error("Сервер повернув не JSON: " + rawText);
         }
 
+        // Перевіримо результат з нового API
         if (!result.success) {
-            setStatus(result.message || "Не вдалося зберегти бронювання.", "error");
+            setStatus(result.message || result.error || "Не вдалося зберегти бронювання.", "error");
             return;
         }
 
+        // Завантажуємо оновлені бронювання
         await loadBookings();
 
+        // Показуємо повідомлення про успіх
         successText.innerHTML = `Ваш урок успішно заброньовано на <b>${selectedDate}</b> о <b>${selectedTime}</b>.<br>До зустрічі у DreamVoice Vocal Studio`;
         successPopup.classList.add("show");
 
+        // Очищуємо форму
         nameInput.value = "";
         phoneInput.value = "";
         selectedTime = "";
 
+        // Оновлюємо слоти
         renderSlots();
         updateSelectedInfo();
         setStatus("Бронювання успішно збережено.", "success");
+
     } catch (error) {
         console.error("Помилка відправки:", error);
         setStatus("Помилка з'єднання: " + error.message, "error");
@@ -443,9 +472,12 @@ closePopup.addEventListener("click", () => {
     successPopup.classList.remove("show");
 });
 
+// ===== ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ =====
 document.addEventListener("DOMContentLoaded", async () => {
+    console.log("Завантаження сторінки...");
     await loadBookings();
     renderCalendar();
     renderSlots();
     updateSelectedInfo();
+    console.log("Ініціалізація завершена");
 });
