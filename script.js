@@ -1,5 +1,5 @@
 // ===== КОНФІГУРАЦІЯ =====
-const API_URL = "https://script.google.com/macros/s/AKfycbzmPk3tczWGN8BmIgrGKK7SP02iplTkXdw87TKmgcGPbU197JR_9ipitVdwwj0BU4FAdQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyHpnVTG4pGbfjYAhTwk01pSkDF8cA7wCdsmO5Wh5mASEYkhfx8Z42GTy29gFyiKedQbQ/exec";
 
 // Розклад: день тижня (0=нд) → масив слотів або null
 const SCHEDULE = {
