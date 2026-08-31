@@ -35,20 +35,34 @@
                 <div class="calendar-days" id="calendarDays"></div>
             </div>
 
+            <div class="schedule-info-container">
+                <button id="scheduleToggle" type="button" class="schedule-toggle">
+                    📋 Додаткова інформація про графік
+                </button>
+                <div class="schedule-details" id="scheduleDetails" style="display: none;">
+                    <div class="schedule-content">
+                        <h3>Дні роботи та слоти</h3>
+                        <p><strong>Пн, Ср, Пт:</strong> 17:00 - 20:00</p>
+                        <p class="slots-time">17:00, 17:45, 18:30, 19:15, 20:00</p>
+                        
+                        <p><strong>Вт, Чт:</strong> 13:00 - 19:45</p>
+                        <p class="slots-time">13:00, 13:45, 14:30, 15:15, 16:00, 16:45, 17:30, 18:15, 19:00, 19:45</p>
+                        
+                        <hr class="schedule-divider">
+                        
+                        <h3>Спочатку доступні слоти</h3>
+                        <p><strong>Пн/Ср/Пт:</strong></p>
+                        <p class="slots-time">17:45, 18:30</p>
+                        
+                        <p><strong>Вт/Чт:</strong></p>
+                        <p class="slots-time">15:15, 16:00, 16:45, 17:30</p>
+                        
+                        <p class="note">Інші розблокуються послідовно після бронювання сусідніх часів.</p>
+                    </div>
+                </div>
+            </div>
+
             <h2>Оберіть час</h2>
-            <p class="slots-note">
-                <strong>Пн, Ср, Пт:</strong> 17:00, 17:45, 18:30, 19:15, 20:00
-                <br>
-                <strong>Вт, Чт:</strong> 13:00, 13:45, 14:30, 15:15, 16:00, 16:45, 17:30, 18:15, 19:00, 19:45
-                <br>
-                <strong>Спочатку доступні:</strong>
-                <br>
-                • Пн/Ср/Пт: 17:45, 18:30
-                <br>
-                • Вт/Чт: 15:15, 16:00, 16:45, 17:30
-                <br>
-                Інші розблокуються послідовно після бронювання сусідніх часів.
-            </p>
 
             <div class="slots" id="slotsContainer"></div>
 
