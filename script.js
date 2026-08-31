@@ -25,8 +25,6 @@ const DEFAULT_OPEN_SLOTS = {
 };
 
 // Правила розблокування слотів
-// Понеділок, середа, п'ятниця: 17:45 → 18:30 → 19:15 → 20:00
-// Вівторок, четвер: 15:15 → 16:00 → 16:45 → 17:30 → 18:15 → 19:00 → 19:45
 const UNLOCK_RULES = {
     // Понеділок, середа, п'ятниця
     "17:45": "18:30",
@@ -56,8 +54,17 @@ const statusMessage = document.querySelector("#statusMessage");
 const successPopup = document.querySelector("#successPopup");
 const closePopup = document.querySelector("#closePopup");
 const successText = document.querySelector("#successText");
+const scheduleToggle = document.querySelector("#scheduleToggle");
+const scheduleDetails = document.querySelector("#scheduleDetails");
 
 let currentDate = new Date();
+
+// Функция для скриття/показу графіку
+scheduleToggle.addEventListener("click", () => {
+    const isHidden = scheduleDetails.style.display === "none";
+    scheduleDetails.style.display = isHidden ? "block" : "none";
+    scheduleToggle.classList.toggle("active", isHidden);
+});
 
 async function loadBookings() {
     try {
@@ -72,12 +79,10 @@ async function loadBookings() {
         } else {
             bookings = [];
             console.error("Некоректна відповідь сервера:", data);
-            setStatus("Некоректна відповідь сервера.", "error");
         }
     } catch (error) {
         console.error("Помилка завантаження:", error);
         bookings = [];
-        setStatus("Не вдалося завантажити бронювання.", "error");
     }
 }
 
@@ -311,6 +316,15 @@ function formatDate(date) {
     return `${day}.${month}.${year}`;
 }
 
+function formatTime(timeString) {
+    // Перевіряємо, чи час у форматі HH:MM
+    if (!/^\d{2}:\d{2}$/.test(timeString)) {
+        console.error("Невірний формат часу:", timeString);
+        throw new Error("Невірний формат часу");
+    }
+    return timeString;
+}
+
 prevMonth.addEventListener("click", () => {
     currentDate.setMonth(currentDate.getMonth() - 1);
     selectedDate = "";
@@ -368,17 +382,24 @@ bookingForm.addEventListener("submit", async (event) => {
     confirmBtn.textContent = "Збереження...";
 
     try {
+        // Перевіряємо час перед відправкою
+        const validTime = formatTime(selectedTime);
+
+        const bookingData = {
+            date: selectedDate,
+            time: validTime,
+            name: name,
+            phone: phone
+        };
+
+        console.log("Відправка даних:", bookingData);
+
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
-                "Content-Type": "text/plain;charset=utf-8"
+                "Content-Type": "application/json;charset=utf-8"
             },
-            body: JSON.stringify({
-                date: selectedDate,
-                time: selectedTime,
-                name: name,
-                phone: phone
-            })
+            body: JSON.stringify(bookingData)
         });
 
         const rawText = await response.text();
@@ -388,6 +409,7 @@ bookingForm.addEventListener("submit", async (event) => {
         try {
             result = JSON.parse(rawText);
         } catch (parseError) {
+            console.error("Помилка парсингу JSON:", parseError);
             throw new Error("Сервер повернув не JSON: " + rawText);
         }
 
