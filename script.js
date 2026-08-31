@@ -1,259 +1,309 @@
+// ===== КОНФІГУРАЦІЯ =====
 const API_URL = "https://script.google.com/macros/s/AKfycbzmPk3tczWGN8BmIgrGKK7SP02iplTkXdw87TKmgcGPbU197JR_9ipitVdwwj0BU4FAdQ/exec";
 
-// Графік роботи (0 = Неділя, 1 = Понеділок, ..., 6 = Субота)
+// Розклад: день тижня (0=нд) → масив слотів або null
 const SCHEDULE = {
-  0: null, // Неділя – вихідний
-  1: { slots: ["17:00", "17:45", "18:30", "19:15", "20:00"], name: "Понеділок" },
-  2: { slots: ["13:00", "13:45", "14:30", "15:15", "16:00", "16:45", "17:30", "18:15", "19:00", "19:45"], name: "Вівторок" },
-  3: { slots: ["17:00", "17:45", "18:30", "19:15", "20:00"], name: "Середа" },
-  4: { slots: ["13:00", "13:45", "14:30", "15:15", "16:00", "16:45", "17:30", "18:15", "19:00", "19:45"], name: "Четвер" },
-  5: { slots: ["17:00", "17:45", "18:30", "19:15", "20:00"], name: "П'ятниця" },
-  6: null  // Субота – вихідний
+  0: null, // Неділя
+  1: ["13:00", "13:45", "14:30", "15:15", "16:00", "16:45", "17:30", "18:15", "19:00", "19:45"], // Вівторок
+  2: ["17:00", "17:45", "18:30", "19:15", "20:00"], // Середа
+  3: ["13:00", "13:45", "14:30", "15:15", "16:00", "16:45", "17:30", "18:15", "19:00", "19:45"], // Четвер
+  4: ["17:00", "17:45", "18:30", "19:15", "20:00"], // П'ятниця
+  5: null, // Субота
+  6: ["17:00", "17:45", "18:30", "19:15", "20:00"] // Понеділок
 };
 
-// Стан додатку
-let currentMonth = new Date();
-let selectedDate = null;
+// ===== СТАН =====
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let selectedDate = null;        // "DD.MM.YYYY"
 let selectedTime = null;
-let bookingsCache = [];
+let bookings = [];              // завантажені бронювання
 
-function formatDate(date) {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}.${month}.${year}`;
-}
+// ===== DOM ЕЛЕМЕНТИ =====
+const monthYearEl = document.getElementById('monthYear');
+const daysContainer = document.getElementById('calendarDays');
+const slotsContainer = document.getElementById('slotsContainer');
+const selectedInfo = document.getElementById('selectedInfo');
+const statusMsg = document.getElementById('statusMessage');
+const form = document.getElementById('bookingForm');
+const nameInput = document.getElementById('name');
+const phoneInput = document.getElementById('phone');
+const selectedDateInput = document.getElementById('selectedDate');
+const selectedTimeInput = document.getElementById('selectedTime');
+const successPopup = document.getElementById('successPopup');
+const successText = document.getElementById('successText');
+const closePopupBtn = document.getElementById('closePopup');
 
-function getMondayBasedDay(date) {
-  return (date.getDay() + 6) % 7;
-}
-
+// ===== ЗАВАНТАЖЕННЯ БРОНЮВАНЬ =====
 async function loadBookings() {
   try {
-    const response = await fetch(API_URL, { method: "GET" });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json;charset=utf-8' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
-    if (!result.success) {
-      console.error("Помилка сервера:", result.message);
-      return [];
-    }
-    bookingsCache = result.data || [];
-    return bookingsCache;
+    if (!result.success) throw new Error(result.message);
+    bookings = result.data || [];
+    console.log('✅ Бронювань завантажено:', bookings.length);
+    return bookings;
   } catch (error) {
-    console.error("Помилка завантаження бронювань:", error);
+    console.error('❌ Помилка завантаження:', error);
+    statusMsg.textContent = '❌ Не вдалося завантажити розклад. Спробуйте пізніше.';
+    statusMsg.className = 'status-message error';
     return [];
   }
 }
 
-function isSlotBooked(date, time, bookings) {
-  return bookings.some(b => b.date === date && b.time === time);
+// ===== ПЕРЕВІРКА, ЧИ СЛОТ ЗАБРОНЬОВАНИЙ =====
+function isSlotBooked(dateStr, timeStr) {
+  return bookings.some(b => b.date === dateStr && b.time === timeStr);
 }
 
-async function getAvailableSlots(dateStr) {
-  const dayOfWeek = new Date(dateStr.split('.').reverse().join('-')).getDay();
-  const schedule = SCHEDULE[dayOfWeek];
-  if (!schedule) return [];
-
-  const bookings = await loadBookings();
-  return schedule.slots.filter(slot => !isSlotBooked(dateStr, slot, bookings));
+// ===== ОТРИМАННЯ ДОСТУПНИХ СЛОТІВ ДЛЯ ДАТИ =====
+function getAvailableSlots(dateStr) {
+  const dayOfWeek = new Date(dateStr.split('.').reverse().join('-')).getDay(); // "DD.MM.YYYY" → Date
+  const slots = SCHEDULE[dayOfWeek];
+  if (!slots) return [];
+  return slots.filter(slot => !isSlotBooked(dateStr, slot));
 }
 
-function renderCalendar() {
-  const monthYearEl = document.getElementById("monthYear");
-  const calendarDaysEl = document.getElementById("calendarDays");
+// ===== ВІДОБРАЖЕННЯ КАЛЕНДАРЯ =====
+function renderCalendar(month, year) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Пн=0, Нд=6
+  const daysInMonth = lastDay.getDate();
+
+  monthYearEl.textContent = `${firstDay.toLocaleString('uk-UA', { month: 'long' })} ${year}`;
+  daysContainer.innerHTML = '';
+
+  // Пусті клітинки до початку місяця
+  for (let i = 0; i < startDayOfWeek; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'calendar-day empty';
+    daysContainer.appendChild(empty);
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-
-  monthYearEl.textContent = currentMonth.toLocaleDateString("uk-UA", { month: "long", year: "numeric" });
-
-  calendarDaysEl.innerHTML = "";
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startOffset = getMondayBasedDay(firstDay);
-
-  for (let i = 0; i < startOffset; i++) {
-    const empty = document.createElement("div");
-    empty.className = "calendar-day empty";
-    calendarDaysEl.appendChild(empty);
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dateStr = formatDate(date);
-    const dayOfWeek = date.getDay();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month, d);
+    const dateStr = dateObj.toLocaleDateString('uk-UA'); // "DD.MM.YYYY"
+    const dayOfWeek = dateObj.getDay();
     const isWorkday = SCHEDULE[dayOfWeek] !== null;
-    const isPast = date < today;
+    const isPast = dateObj < today;
 
-    const btn = document.createElement("button");
-    btn.className = "calendar-day";
-    if (!isWorkday || isPast) {
-      btn.classList.add("disabled");
-      btn.disabled = true;
-    } else {
-      btn.addEventListener("click", () => selectDate(dateStr));
+    const dayEl = document.createElement('div');
+    dayEl.className = `calendar-day ${isWorkday && !isPast ? 'workday' : 'disabled'}`;
+    dayEl.textContent = d;
+
+    if (isWorkday && !isPast) {
+      dayEl.addEventListener('click', () => selectDate(dateStr));
     }
 
-    if (selectedDate === dateStr) {
-      btn.classList.add("selected");
+    // Якщо вибрана дата — підсвітити
+    if (dateStr === selectedDate) {
+      dayEl.classList.add('selected');
     }
 
-    btn.textContent = day;
-    calendarDaysEl.appendChild(btn);
+    daysContainer.appendChild(dayEl);
   }
 }
 
+// ===== ВИБІР ДАТИ =====
 async function selectDate(dateStr) {
   selectedDate = dateStr;
+  selectedDateInput.value = dateStr;
   selectedTime = null;
-  updateSelectedInfo();
+  selectedTimeInput.value = '';
+  selectedInfo.textContent = `📅 Обрано: ${dateStr}`;
 
-  document.querySelectorAll(".calendar-day").forEach(btn => {
-    btn.classList.remove("selected");
-    if (btn.textContent == new Date(dateStr.split('.').reverse().join('-')).getDate()) {
-      btn.classList.add("selected");
+  // Оновити підсвічування в календарі
+  document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
+  const allDays = document.querySelectorAll('.calendar-day.workday');
+  allDays.forEach(el => {
+    const d = parseInt(el.textContent);
+    const dateObj = new Date(currentYear, currentMonth, d);
+    if (dateObj.toLocaleDateString('uk-UA') === dateStr) {
+      el.classList.add('selected');
     }
   });
 
-  const slotsContainer = document.getElementById("slotsContainer");
-  slotsContainer.innerHTML = "<p>Завантаження слотів...</p>";
+  // Отримати доступні слоти
+  const available = getAvailableSlots(dateStr);
+  renderSlots(available);
 
-  try {
-    const availableSlots = await getAvailableSlots(dateStr);
-    slotsContainer.innerHTML = "";
-
-    if (availableSlots.length === 0) {
-      slotsContainer.innerHTML = "<p>Немає доступних слотів на цю дату</p>";
-      return;
-    }
-
-    availableSlots.forEach(slot => {
-      const btn = document.createElement("button");
-      btn.className = "slot available";
-      btn.textContent = slot;
-      btn.addEventListener("click", () => selectTime(slot));
-      slotsContainer.appendChild(btn);
-    });
-  } catch (error) {
-    console.error("Помилка отримання слотів:", error);
-    slotsContainer.innerHTML = "<p>Помилка завантаження слотів</p>";
-  }
+  // Скинути повідомлення
+  statusMsg.textContent = '';
+  statusMsg.className = 'status-message';
 }
 
-function selectTime(time) {
-  selectedTime = time;
-  updateSelectedInfo();
-
-  document.querySelectorAll(".slot").forEach(btn => {
-    btn.classList.remove("selected");
-    if (btn.textContent === time) {
-      btn.classList.add("selected");
-    }
-  });
-}
-
-function updateSelectedInfo() {
-  const infoEl = document.getElementById("selectedInfo");
-  if (selectedDate && selectedTime) {
-    infoEl.textContent = `Вибрано: ${selectedDate} о ${selectedTime}`;
-  } else if (selectedDate) {
-    infoEl.textContent = `Вибрана дата: ${selectedDate}. Оберіть час.`;
-  } else {
-    infoEl.textContent = "";
-  }
-}
-
-function toggleSchedule() {
-  const details = document.getElementById("scheduleDetails");
-  const toggleBtn = document.getElementById("scheduleToggle");
-  const isHidden = details.style.display === "none";
-  details.style.display = isHidden ? "block" : "none";
-  toggleBtn.classList.toggle("active", isHidden);
-}
-
-async function submitBooking(event) {
-  event.preventDefault();
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const statusMsg = document.getElementById("statusMessage");
-
-  if (!name || !phone || !selectedDate || !selectedTime) {
-    statusMsg.textContent = "Будь ласка, заповніть усі поля та оберіть дату й час.";
-    statusMsg.className = "status-message error";
+// ===== ВІДОБРАЖЕННЯ СЛОТІВ =====
+function renderSlots(slots) {
+  slotsContainer.innerHTML = '';
+  if (!slots || slots.length === 0) {
+    slotsContainer.innerHTML = '<p style="text-align:center; color:#7a6a5f;">Немає доступних слотів на цю дату</p>';
     return;
   }
 
-  const confirmBtn = document.getElementById("confirmBtn");
-  confirmBtn.disabled = true;
-  statusMsg.textContent = "Надсилання...";
-  statusMsg.className = "status-message";
+  slots.forEach(slot => {
+    const btn = document.createElement('button');
+    btn.className = 'slot available';
+    btn.textContent = slot;
+    btn.addEventListener('click', () => selectTime(slot));
+    if (slot === selectedTime) {
+      btn.classList.add('selected');
+    }
+    slotsContainer.appendChild(btn);
+  });
+}
+
+// ===== ВИБІР ЧАСУ =====
+function selectTime(time) {
+  selectedTime = time;
+  selectedTimeInput.value = time;
+  selectedInfo.textContent = `📅 ${selectedDate}  ⏰ ${time}`;
+
+  // Оновити підсвічування
+  document.querySelectorAll('.slot').forEach(el => el.classList.remove('selected'));
+  const slots = document.querySelectorAll('.slot');
+  slots.forEach(el => {
+    if (el.textContent === time) el.classList.add('selected');
+  });
+}
+
+// ===== ВІДПРАВКА ФОРМИ =====
+form.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const date = selectedDate;
+  const time = selectedTime;
+
+  if (!name || !phone) {
+    statusMsg.textContent = '❌ Будь ласка, заповніть ім\'я та телефон.';
+    statusMsg.className = 'status-message error';
+    return;
+  }
+  if (!date || !time) {
+    statusMsg.textContent = '❌ Оберіть дату та час.';
+    statusMsg.className = 'status-message error';
+    return;
+  }
+
+  // Блокуємо кнопку
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Відправка...';
+  statusMsg.textContent = '⏳ Відправляємо...';
+  statusMsg.className = 'status-message';
 
   try {
+    const payload = { date, time, name, phone };
     const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json;charset=utf-8" },
-      body: JSON.stringify({
-        date: selectedDate,
-        time: selectedTime,
-        name: name,
-        phone: phone
-      })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json;charset=utf-8' },
+      body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
 
     if (result.success) {
-      const popup = document.getElementById("successPopup");
-      const successText = document.getElementById("successText");
-      successText.innerHTML = `✅ Бронювання успішно збережено!<br><b>${selectedDate} о ${selectedTime}</b><br>Ім'я: ${name}<br>Телефон: ${phone}`;
-      popup.classList.add("show");
+      // Успіх
+      statusMsg.textContent = '✅ Бронювання збережено!';
+      statusMsg.className = 'status-message success';
 
-      document.getElementById("bookingForm").reset();
+      // Показати попап
+      successText.innerHTML = `Ви записані на <b>${date}</b> о <b>${time}</b><br>Ім'я: ${name}<br>Телефон: ${phone}`;
+      successPopup.classList.add('show');
+
+      // Очистити форму та вибір
+      nameInput.value = '';
+      phoneInput.value = '';
       selectedDate = null;
       selectedTime = null;
-      updateSelectedInfo();
-      document.getElementById("slotsContainer").innerHTML = "";
-      renderCalendar();
+      selectedDateInput.value = '';
+      selectedTimeInput.value = '';
+      selectedInfo.textContent = '';
+      renderSlots([]);
+      // Оновити календар (зняти виділення)
+      document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
+      // Перезавантажити бронювання для оновлення доступності
+      await loadBookings();
+      // Якщо вибрана дата залишилась, оновити слоти
+      if (selectedDate) {
+        const available = getAvailableSlots(selectedDate);
+        renderSlots(available);
+      }
     } else {
-      statusMsg.textContent = `Помилка: ${result.message}`;
-      statusMsg.className = "status-message error";
+      throw new Error(result.message || 'Невідома помилка сервера');
     }
   } catch (error) {
-    console.error("Помилка відправки:", error);
-    statusMsg.textContent = "Помилка збереження. Спробуйте пізніше.";
-    statusMsg.className = "status-message error";
+    console.error('❌ Помилка відправки:', error);
+    statusMsg.textContent = `❌ Помилка: ${error.message}`;
+    statusMsg.className = 'status-message error';
   } finally {
-    confirmBtn.disabled = false;
+    btn.disabled = false;
+    btn.textContent = 'Підтвердити запис';
   }
-}
-
-function closePopup() {
-  document.getElementById("successPopup").classList.remove("show");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("🚀 Ініціалізація додатку...");
-
-  document.getElementById("prevMonth").addEventListener("click", () => {
-    currentMonth.setMonth(currentMonth.getMonth() - 1);
-    renderCalendar();
-  });
-  document.getElementById("nextMonth").addEventListener("click", () => {
-    currentMonth.setMonth(currentMonth.getMonth() + 1);
-    renderCalendar();
-  });
-
-  document.getElementById("scheduleToggle").addEventListener("click", toggleSchedule);
-
-  document.getElementById("bookingForm").addEventListener("submit", submitBooking);
-
-  document.getElementById("closePopup").addEventListener("click", closePopup);
-
-  renderCalendar();
-  loadBookings().then(() => console.log("Бронювання завантажено"));
 });
+
+// ===== ЗАКРИТТЯ ПОПАПА =====
+closePopupBtn.addEventListener('click', () => {
+  successPopup.classList.remove('show');
+});
+
+// Клік поза попапом теж закриває
+successPopup.addEventListener('click', (e) => {
+  if (e.target === successPopup) successPopup.classList.remove('show');
+});
+
+// ===== НАВІГАЦІЯ МІСЯЦЯМИ =====
+document.getElementById('prevMonth').addEventListener('click', () => {
+  if (currentMonth === 0) { currentMonth = 11; currentYear--; }
+  else currentMonth--;
+  renderCalendar(currentMonth, currentYear);
+  // Якщо вибрана дата була в цьому місяці — можна скинути, або залишити
+  // Просто очистимо вибір
+  clearSelection();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  if (currentMonth === 11) { currentMonth = 0; currentYear++; }
+  else currentMonth++;
+  renderCalendar(currentMonth, currentYear);
+  clearSelection();
+});
+
+function clearSelection() {
+  selectedDate = null;
+  selectedTime = null;
+  selectedDateInput.value = '';
+  selectedTimeInput.value = '';
+  selectedInfo.textContent = '';
+  renderSlots([]);
+  document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
+}
+
+// ===== TOGGLE ДОДАТКОВОЇ ІНФОРМАЦІЇ =====
+document.getElementById('scheduleToggle').addEventListener('click', function() {
+  const details = document.getElementById('scheduleDetails');
+  if (details.style.display === 'none') {
+    details.style.display = 'block';
+    this.classList.add('active');
+  } else {
+    details.style.display = 'none';
+    this.classList.remove('active');
+  }
+});
+
+// ===== ІНІЦІАЛІЗАЦІЯ =====
+(async function init() {
+  await loadBookings();
+  renderCalendar(currentMonth, currentYear);
+  // Якщо є вибрана дата (наприклад збережена в URL), але зараз ні
+})();
