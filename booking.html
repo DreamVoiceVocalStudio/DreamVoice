@@ -36,27 +36,13 @@
             </div>
 
             <h2>Оберіть час</h2>
-                                    <h3>Спочатку доступні слоти</h3>
-                        <p><strong>Пн/Ср/Пт:</strong></p>
-                        <p class="slots-time">17:45, 18:30</p>
-                        
-                        <p><strong>Вт/Чт:</strong></p>
-                        <p class="slots-time">15:15, 16:00, 16:45, 17:30</p>
-                        
-                        <p class="note">Інші розблокуються послідовно після бронювання сусідніх часів.</p>
-
-                    <div class="schedule-content">
-                        <h3>Дні роботи та слоти</h3>
-                        <p><strong>Пн, Ср, Пт:</strong> 17:00 - 20:00</p>
-                        <p class="slots-time">17:00, 17:45, 18:30, 19:15, 20:00</p>
-                        
-                        <p><strong>Вт, Чт:</strong> 13:00 - 19:45</p>
-                        <p class="slots-time">13:00, 13:45, 14:30, 15:15, 16:00, 16:45, 17:30, 18:15, 19:00, 19:45</p>
-                        
-                        <hr class="schedule-divider">
-                        
-                    </div>
-               
+            <p class="slots-note">
+                Спочатку доступні.
+                <strong>Пн, Ср, Пт:</strong> 17:45, 18:30 | 
+                <strong>Вт, Чт:</strong> 15:15, 16:00, 16:45, 17:30 
+                <br>
+                Інші розблокуються після бронювання сусідніх.
+            </p>
 
             <div class="slots" id="slotsContainer"></div>
 
@@ -64,7 +50,7 @@
             <p class="status-message" id="statusMessage"></p>
 
             <form class="form" id="bookingForm">
-                <input type="text" id="name" placeholder="Ваше ім’я" required>
+                <input type="text" id="name" placeholder="Ваше ім'я" required>
                 <input type="tel" id="phone" placeholder="Ваш телефон" required>
                 <button type="submit" class="confirm" id="confirmBtn">Підтвердити запис</button>
             </form>
