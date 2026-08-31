@@ -2,7 +2,7 @@ let selectedDate = "";
 let selectedTime = "";
 let bookings = [];
 
-const API_URL = "https://script.google.com/macros/s/AKfycbws0n8vxZ9C6sESnTqkkYrKfrSRAqSGVI0H0brq7NLxKBipig9tRua8PEH_XT-qGoDmqg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwPI1VVfOQzuztBZ7EI8Z80AogKseDFaU-cp91CRsbX9ZQNKbyt_5zm1MSHUgGK0SIC_g/exec";
 
 // ================================
 // ГРАФІК
