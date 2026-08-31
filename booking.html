@@ -37,7 +37,13 @@
 
             <h2>Оберіть час</h2>
             <p class="slots-note">
-                Спочатку доступні 11:30, 12:15, 13:00. Інші відкриваються після бронювання сусідніх слотів.
+                <!-- НОВИЙ ТЕКСТ ВІДПОВІДНО ДО ГРАФІКА -->
+                Робочі дні: понеділок, вівторок, середа, четвер, п'ятниця.
+                <br>
+                <strong>Пн, Ср, Пт:</strong> 17:45–18:30 (2 слоти) | 
+                <strong>Вт, Чт:</strong> 15:15–17:30 (4 слоти)
+                <br>
+                Спочатку доступні першіслоти. Інші розблокуються після бронювання сусідніх.
             </p>
 
             <div class="slots" id="slotsContainer"></div>
@@ -46,7 +52,7 @@
             <p class="status-message" id="statusMessage"></p>
 
             <form class="form" id="bookingForm">
-                <input type="text" id="name" placeholder="Ваше ім’я" required>
+                <input type="text" id="name" placeholder="Ваше ім'я" required>
                 <input type="tel" id="phone" placeholder="Ваш телефон" required>
                 <button type="submit" class="confirm" id="confirmBtn">Підтвердити запис</button>
             </form>
