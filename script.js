@@ -2,7 +2,7 @@ let selectedDate = "";
 let selectedTime = "";
 let bookings = [];
 
-const API_URL = "https://script.google.com/macros/s/AKfycby-Zd1h72Aq4m87Mdl6DSbil0cXH4pTc4oPN48gMItOj6eoUX3iV-eemE7JJFUizl5rpQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzmPk3tczWGN8BmIgrGKK7SP02iplTkXdw87TKmgcGPbU197JR_9ipitVdwwj0BU4FAdQ/exec";
 
 // Графік роботи (день тижня -> дозволені часи)
 // 0 = неділя, 1 = понеділок, ..., 6 = субота
