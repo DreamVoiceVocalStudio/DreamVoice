@@ -8,56 +8,52 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwtUAV-2Y8ctiqnRwCw-3TR
 // ГРАФІК
 // ================================
 
-// Понеділок, середа, п'ятниця
 const MON_WED_FRI_SLOTS = [
-"13:00",
-"13:45",
-"14:30",
-"15:15",
-"16:00",
-"16:45",
-"17:30",
-"18:15",
-"19:00",
-"19:45"
+    "13:00",
+    "13:45",
+    "14:30",
+    "15:15",
+    "16:00",
+    "16:45",
+    "17:30",
+    "18:15",
+    "19:00",
+    "19:45"
 ];
 
-// Вівторок, четвер
 const TUE_THU_SLOTS = [
-"17:00",
-"17:45",
-"18:30",
-"19:15",
-"20:00"
+    "17:00",
+    "17:45",
+    "18:30",
+    "19:15",
+    "20:00"
 ];
 
-// Слоти, які доступні одразу
 const MON_WED_FRI_DEFAULT_OPEN = [
-"15:15",
-"16:00",
-"16:45",
-"17:30"
+    "15:15",
+    "16:00",
+    "16:45",
+    "17:30"
 ];
 
 const TUE_THU_DEFAULT_OPEN = [
-"17:45",
-"18:30"
+    "17:45",
+    "18:30"
 ];
 
-// Який слот відкривається після бронювання попереднього
 const MON_WED_FRI_UNLOCK_RULES = {
-"15:15": "14:30",
-"14:30": "13:45",
-"13:45": "13:00",
-"17:30": "18:15",
-"18:15": "19:00",
-"19:00": "19:45"
+    "15:15": "14:30",
+    "14:30": "13:45",
+    "13:45": "13:00",
+    "17:30": "18:15",
+    "18:15": "19:00",
+    "19:00": "19:45"
 };
 
 const TUE_THU_UNLOCK_RULES = {
-"17:45": "17:00",
-"18:30": "19:15",
-"19:15": "20:00"
+    "17:45": "17:00",
+    "18:30": "19:15",
+    "19:15": "20:00"
 };
 
 // ================================
@@ -90,37 +86,34 @@ let currentDate = new Date();
 // ================================
 
 async function loadBookings() {
-try {
-const response = await fetch(API_URL, {
-method: "GET"
-});
+    try {
+        const response = await fetch(API_URL, {
+            method: "GET"
+        });
 
-```
-    const data = await response.json();
+        const data = await response.json();
 
-    if (Array.isArray(data)) {
-        bookings = data;
-    } else if (Array.isArray(data.data)) {
-        bookings = data.data;
-    } else {
+        if (Array.isArray(data)) {
+            bookings = data;
+        } else if (Array.isArray(data.data)) {
+            bookings = data.data;
+        } else {
+            bookings = [];
+
+            console.error("Некоректна відповідь сервера:", data);
+            setStatus("Некоректна відповідь сервера.", "error");
+        }
+
+    } catch (error) {
+        console.error("Помилка завантаження:", error);
+
         bookings = [];
 
-        console.error("Некоректна відповідь сервера:", data);
-        setStatus("Некоректна відповідь сервера.", "error");
+        setStatus(
+            "Не вдалося завантажити бронювання.",
+            "error"
+        );
     }
-
-} catch (error) {
-    console.error("Помилка завантаження:", error);
-
-    bookings = [];
-
-    setStatus(
-        "Не вдалося завантажити бронювання.",
-        "error"
-    );
-}
-```
-
 }
 
 // ================================
@@ -128,28 +121,25 @@ method: "GET"
 // ================================
 
 function getDayType(date) {
-const day = date.getDay();
+    const day = date.getDay();
 
-```
-// 0 — неділя
-// 1 — понеділок
-// 2 — вівторок
-// 3 — середа
-// 4 — четвер
-// 5 — п'ятниця
-// 6 — субота
+    // 0 — неділя
+    // 1 — понеділок
+    // 2 — вівторок
+    // 3 — середа
+    // 4 — четвер
+    // 5 — п'ятниця
+    // 6 — субота
 
-if ([1, 3, 5].includes(day)) {
-    return "monWedFri";
-}
+    if ([1, 3, 5].includes(day)) {
+        return "monWedFri";
+    }
 
-if ([2, 4].includes(day)) {
-    return "tueThu";
-}
+    if ([2, 4].includes(day)) {
+        return "tueThu";
+    }
 
-return "weekend";
-```
-
+    return "weekend";
 }
 
 // ================================
@@ -157,20 +147,17 @@ return "weekend";
 // ================================
 
 function getSlotsForDate(date) {
-const dayType = getDayType(date);
+    const dayType = getDayType(date);
 
-```
-if (dayType === "monWedFri") {
-    return MON_WED_FRI_SLOTS;
-}
+    if (dayType === "monWedFri") {
+        return MON_WED_FRI_SLOTS;
+    }
 
-if (dayType === "tueThu") {
-    return TUE_THU_SLOTS;
-}
+    if (dayType === "tueThu") {
+        return TUE_THU_SLOTS;
+    }
 
-return [];
-```
-
+    return [];
 }
 
 // ================================
@@ -178,107 +165,98 @@ return [];
 // ================================
 
 function renderCalendar() {
-calendarDays.innerHTML = "";
+    calendarDays.innerHTML = "";
 
-```
-const year = currentDate.getFullYear();
-const month = currentDate.getMonth();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-monthYear.textContent = new Date(year, month).toLocaleString(
-    "uk-UA",
-    {
-        month: "long",
-        year: "numeric"
-    }
-);
+    monthYear.textContent = new Date(year, month).toLocaleString(
+        "uk-UA",
+        {
+            month: "long",
+            year: "numeric"
+        }
+    );
 
-const firstDay = new Date(year, month, 1).getDay();
-const daysInMonth = new Date(
-    year,
-    month + 1,
-    0
-).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
 
-// Робимо понеділок першим днем тижня
-const start = firstDay === 0 ? 7 : firstDay;
-
-// Порожні клітинки перед першим числом
-for (let i = 1; i < start; i++) {
-    const empty = document.createElement("div");
-
-    empty.className = "calendar-day empty";
-
-    calendarDays.appendChild(empty);
-}
-
-const today = new Date();
-
-const todayOnly = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-);
-
-for (let day = 1; day <= daysInMonth; day++) {
-
-    const button = document.createElement("button");
-
-    button.className = "calendar-day";
-    button.type = "button";
-    button.textContent = day;
-
-    const dateObj = new Date(
+    const daysInMonth = new Date(
         year,
-        month,
-        day
+        month + 1,
+        0
+    ).getDate();
+
+    const start = firstDay === 0 ? 7 : firstDay;
+
+    for (let i = 1; i < start; i++) {
+        const empty = document.createElement("div");
+
+        empty.className = "calendar-day empty";
+
+        calendarDays.appendChild(empty);
+    }
+
+    const today = new Date();
+
+    const todayOnly = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
     );
 
-    const weekDay = dateObj.getDay();
+    for (let day = 1; day <= daysInMonth; day++) {
 
-    const dateOnly = new Date(
-        dateObj.getFullYear(),
-        dateObj.getMonth(),
-        dateObj.getDate()
-    );
+        const button = document.createElement("button");
 
-    const formattedDate = formatDate(dateObj);
+        button.className = "calendar-day";
+        button.type = "button";
+        button.textContent = day;
 
-    // Вихідні
-    const isWeekend = [0, 6].includes(weekDay);
+        const dateObj = new Date(
+            year,
+            month,
+            day
+        );
 
-    // Минулі дати
-    const isPast = dateOnly < todayOnly;
+        const weekDay = dateObj.getDay();
 
-    // Якщо вихідний або минула дата
-    if (isWeekend || isPast) {
-        button.classList.add("disabled");
-        button.disabled = true;
+        const dateOnly = new Date(
+            dateObj.getFullYear(),
+            dateObj.getMonth(),
+            dateObj.getDate()
+        );
+
+        const formattedDate = formatDate(dateObj);
+
+        const isWeekend = [0, 6].includes(weekDay);
+        const isPast = dateOnly < todayOnly;
+
+        if (isWeekend || isPast) {
+            button.classList.add("disabled");
+            button.disabled = true;
+        }
+
+        if (formattedDate === selectedDate) {
+            button.classList.add("selected");
+        }
+
+        if (!button.disabled) {
+
+            button.addEventListener("click", () => {
+
+                selectedDate = formattedDate;
+                selectedTime = "";
+
+                clearStatus();
+
+                renderCalendar();
+                renderSlots();
+                updateSelectedInfo();
+            });
+        }
+
+        calendarDays.appendChild(button);
     }
-
-    // Вибрана дата
-    if (formattedDate === selectedDate) {
-        button.classList.add("selected");
-    }
-
-    if (!button.disabled) {
-
-        button.addEventListener("click", () => {
-
-            selectedDate = formattedDate;
-            selectedTime = "";
-
-            clearStatus();
-
-            renderCalendar();
-            renderSlots();
-            updateSelectedInfo();
-        });
-    }
-
-    calendarDays.appendChild(button);
-}
-```
-
 }
 
 // ================================
@@ -287,12 +265,9 @@ for (let day = 1; day <= daysInMonth; day++) {
 
 function getBookedTimes(date) {
 
-```
-return bookings
-    .filter(item => item.date === date)
-    .map(item => item.time);
-```
-
+    return bookings
+        .filter(item => item.date === date)
+        .map(item => item.time);
 }
 
 // ================================
@@ -301,67 +276,62 @@ return bookings
 
 function getAvailableSlots(date) {
 
-```
-if (!date) {
-    return [];
-}
-
-const dateParts = date.split(".");
-
-const dateObj = new Date(
-    Number(dateParts[2]),
-    Number(dateParts[1]) - 1,
-    Number(dateParts[0])
-);
-
-const dayType = getDayType(dateObj);
-
-const bookedTimes = getBookedTimes(date);
-
-const availableSet = new Set();
-
-let defaultOpenSlots = [];
-let unlockRules = {};
-
-if (dayType === "monWedFri") {
-
-    defaultOpenSlots = MON_WED_FRI_DEFAULT_OPEN;
-    unlockRules = MON_WED_FRI_UNLOCK_RULES;
-
-} else if (dayType === "tueThu") {
-
-    defaultOpenSlots = TUE_THU_DEFAULT_OPEN;
-    unlockRules = TUE_THU_UNLOCK_RULES;
-
-} else {
-
-    return [];
-}
-
-// Слоти, які доступні від початку
-defaultOpenSlots.forEach(slot => {
-
-    if (!bookedTimes.includes(slot)) {
-        availableSet.add(slot);
+    if (!date) {
+        return [];
     }
-});
 
-// Відкриваємо сусідні слоти після бронювання
-bookedTimes.forEach(bookedTime => {
+    const dateParts = date.split(".");
 
-    const unlockedSlot = unlockRules[bookedTime];
+    const dateObj = new Date(
+        Number(dateParts[2]),
+        Number(dateParts[1]) - 1,
+        Number(dateParts[0])
+    );
 
-    if (
-        unlockedSlot &&
-        !bookedTimes.includes(unlockedSlot)
-    ) {
-        availableSet.add(unlockedSlot);
+    const dayType = getDayType(dateObj);
+
+    const bookedTimes = getBookedTimes(date);
+
+    const availableSet = new Set();
+
+    let defaultOpenSlots = [];
+    let unlockRules = {};
+
+    if (dayType === "monWedFri") {
+
+        defaultOpenSlots = MON_WED_FRI_DEFAULT_OPEN;
+        unlockRules = MON_WED_FRI_UNLOCK_RULES;
+
+    } else if (dayType === "tueThu") {
+
+        defaultOpenSlots = TUE_THU_DEFAULT_OPEN;
+        unlockRules = TUE_THU_UNLOCK_RULES;
+
+    } else {
+
+        return [];
     }
-});
 
-return Array.from(availableSet);
-```
+    defaultOpenSlots.forEach(slot => {
 
+        if (!bookedTimes.includes(slot)) {
+            availableSet.add(slot);
+        }
+    });
+
+    bookedTimes.forEach(bookedTime => {
+
+        const unlockedSlot = unlockRules[bookedTime];
+
+        if (
+            unlockedSlot &&
+            !bookedTimes.includes(unlockedSlot)
+        ) {
+            availableSet.add(unlockedSlot);
+        }
+    });
+
+    return Array.from(availableSet);
 }
 
 // ================================
@@ -370,22 +340,19 @@ return Array.from(availableSet);
 
 function getSlotState(date, time) {
 
-```
-const bookedTimes = getBookedTimes(date);
+    const bookedTimes = getBookedTimes(date);
 
-if (bookedTimes.includes(time)) {
-    return "booked";
-}
+    if (bookedTimes.includes(time)) {
+        return "booked";
+    }
 
-const availableSlots = getAvailableSlots(date);
+    const availableSlots = getAvailableSlots(date);
 
-if (availableSlots.includes(time)) {
-    return "available";
-}
+    if (availableSlots.includes(time)) {
+        return "available";
+    }
 
-return "locked";
-```
-
+    return "locked";
 }
 
 // ================================
@@ -394,93 +361,88 @@ return "locked";
 
 function renderSlots() {
 
-```
-slotsContainer.innerHTML = "";
+    slotsContainer.innerHTML = "";
 
-if (!selectedDate) {
-
-    return;
-}
-
-const dateParts = selectedDate.split(".");
-
-const selectedDateObj = new Date(
-    Number(dateParts[2]),
-    Number(dateParts[1]) - 1,
-    Number(dateParts[0])
-);
-
-const allSlots = getSlotsForDate(selectedDateObj);
-
-// Якщо субота або неділя
-if (allSlots.length === 0) {
-
-    const message = document.createElement("p");
-
-    message.className = "slots-note";
-    message.textContent = "У цей день студія не працює.";
-
-    slotsContainer.appendChild(message);
-
-    return;
-}
-
-allSlots.forEach((time) => {
-
-    const button = document.createElement("button");
-
-    button.type = "button";
-    button.classList.add("slot");
-    button.dataset.time = time;
-
-    const state = getSlotState(
-        selectedDate,
-        time
-    );
-
-    if (state === "booked") {
-
-        button.classList.add("booked");
-
-        button.textContent = `${time} — зайнято`;
-
-        button.disabled = true;
-
-    } else if (state === "available") {
-
-        button.classList.add("available");
-
-        button.textContent = time;
-
-        button.disabled = false;
-
-        if (selectedTime === time) {
-            button.classList.add("selected");
-        }
-
-        button.addEventListener("click", () => {
-
-            selectedTime = time;
-
-            clearStatus();
-
-            renderSlots();
-            updateSelectedInfo();
-        });
-
-    } else {
-
-        button.classList.add("locked");
-
-        button.textContent = time;
-
-        button.disabled = true;
+    if (!selectedDate) {
+        return;
     }
 
-    slotsContainer.appendChild(button);
-});
-```
+    const dateParts = selectedDate.split(".");
 
+    const selectedDateObj = new Date(
+        Number(dateParts[2]),
+        Number(dateParts[1]) - 1,
+        Number(dateParts[0])
+    );
+
+    const allSlots = getSlotsForDate(selectedDateObj);
+
+    if (allSlots.length === 0) {
+
+        const message = document.createElement("p");
+
+        message.className = "slots-note";
+        message.textContent = "У цей день студія не працює.";
+
+        slotsContainer.appendChild(message);
+
+        return;
+    }
+
+    allSlots.forEach((time) => {
+
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.classList.add("slot");
+        button.dataset.time = time;
+
+        const state = getSlotState(
+            selectedDate,
+            time
+        );
+
+        if (state === "booked") {
+
+            button.classList.add("booked");
+
+            button.textContent = `${time} — зайнято`;
+
+            button.disabled = true;
+
+        } else if (state === "available") {
+
+            button.classList.add("available");
+
+            button.textContent = time;
+
+            button.disabled = false;
+
+            if (selectedTime === time) {
+                button.classList.add("selected");
+            }
+
+            button.addEventListener("click", () => {
+
+                selectedTime = time;
+
+                clearStatus();
+
+                renderSlots();
+                updateSelectedInfo();
+            });
+
+        } else {
+
+            button.classList.add("locked");
+
+            button.textContent = time;
+
+            button.disabled = true;
+        }
+
+        slotsContainer.appendChild(button);
+    });
 }
 
 // ================================
@@ -489,23 +451,20 @@ allSlots.forEach((time) => {
 
 function updateSelectedInfo() {
 
-```
-if (selectedDate && selectedTime) {
+    if (selectedDate && selectedTime) {
 
-    selectedInfo.textContent =
-        `Обрано: ${selectedDate} о ${selectedTime}`;
+        selectedInfo.textContent =
+            `Обрано: ${selectedDate} о ${selectedTime}`;
 
-} else if (selectedDate) {
+    } else if (selectedDate) {
 
-    selectedInfo.textContent =
-        `Обрана дата: ${selectedDate}. Тепер виберіть час.`;
+        selectedInfo.textContent =
+            `Обрана дата: ${selectedDate}. Тепер виберіть час.`;
 
-} else {
+    } else {
 
-    selectedInfo.textContent = "";
-}
-```
-
+        selectedInfo.textContent = "";
+    }
 }
 
 // ================================
@@ -514,26 +473,20 @@ if (selectedDate && selectedTime) {
 
 function setStatus(message, type = "") {
 
-```
-statusMessage.textContent = message;
+    statusMessage.textContent = message;
 
-statusMessage.className = "status-message";
+    statusMessage.className = "status-message";
 
-if (type) {
-    statusMessage.classList.add(type);
-}
-```
-
+    if (type) {
+        statusMessage.classList.add(type);
+    }
 }
 
 function clearStatus() {
 
-```
-statusMessage.textContent = "";
+    statusMessage.textContent = "";
 
-statusMessage.className = "status-message";
-```
-
+    statusMessage.className = "status-message";
 }
 
 // ================================
@@ -542,20 +495,17 @@ statusMessage.className = "status-message";
 
 function formatDate(date) {
 
-```
-const day = String(
-    date.getDate()
-).padStart(2, "0");
+    const day = String(
+        date.getDate()
+    ).padStart(2, "0");
 
-const month = String(
-    date.getMonth() + 1
-).padStart(2, "0");
+    const month = String(
+        date.getMonth() + 1
+    ).padStart(2, "0");
 
-const year = date.getFullYear();
+    const year = date.getFullYear();
 
-return `${day}.${month}.${year}`;
-```
-
+    return `${day}.${month}.${year}`;
 }
 
 // ================================
@@ -564,40 +514,34 @@ return `${day}.${month}.${year}`;
 
 prevMonth.addEventListener("click", () => {
 
-```
-currentDate.setMonth(
-    currentDate.getMonth() - 1
-);
+    currentDate.setMonth(
+        currentDate.getMonth() - 1
+    );
 
-selectedDate = "";
-selectedTime = "";
+    selectedDate = "";
+    selectedTime = "";
 
-renderCalendar();
-renderSlots();
-updateSelectedInfo();
+    renderCalendar();
+    renderSlots();
+    updateSelectedInfo();
 
-clearStatus();
-```
-
+    clearStatus();
 });
 
 nextMonth.addEventListener("click", () => {
 
-```
-currentDate.setMonth(
-    currentDate.getMonth() + 1
-);
+    currentDate.setMonth(
+        currentDate.getMonth() + 1
+    );
 
-selectedDate = "";
-selectedTime = "";
+    selectedDate = "";
+    selectedTime = "";
 
-renderCalendar();
-renderSlots();
-updateSelectedInfo();
+    renderCalendar();
+    renderSlots();
+    updateSelectedInfo();
 
-clearStatus();
-```
-
+    clearStatus();
 });
 
 // ================================
@@ -605,169 +549,165 @@ clearStatus();
 // ================================
 
 bookingForm.addEventListener(
-"submit",
-async (event) => {
+    "submit",
+    async (event) => {
 
-```
-    event.preventDefault();
+        event.preventDefault();
 
-    const name = nameInput.value.trim();
-    const phone = phoneInput.value.trim();
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
 
-    clearStatus();
+        clearStatus();
 
-    if (!selectedDate) {
-
-        setStatus(
-            "Оберіть дату 🤎",
-            "error"
-        );
-
-        return;
-    }
-
-    if (!selectedTime) {
-
-        setStatus(
-            "Оберіть час уроку 🤎",
-            "error"
-        );
-
-        return;
-    }
-
-    if (!name || !phone) {
-
-        setStatus(
-            "Заповніть ім'я та телефон 🤎",
-            "error"
-        );
-
-        return;
-    }
-
-    // Повторна перевірка доступності
-    const currentState = getSlotState(
-        selectedDate,
-        selectedTime
-    );
-
-    if (currentState !== "available") {
-
-        setStatus(
-            "Цей слот уже недоступний. Оберіть інший час.",
-            "error"
-        );
-
-        selectedTime = "";
-
-        renderSlots();
-        updateSelectedInfo();
-
-        return;
-    }
-
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = "Збереження...";
-
-    try {
-
-        const response = await fetch(
-            API_URL,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "text/plain;charset=utf-8"
-                },
-
-                body: JSON.stringify({
-                    date: selectedDate,
-                    time: selectedTime,
-                    name: name,
-                    phone: phone
-                })
-            }
-        );
-
-        const rawText = await response.text();
-
-        console.log(
-            "RAW RESPONSE:",
-            rawText
-        );
-
-        let result;
-
-        try {
-
-            result = JSON.parse(rawText);
-
-        } catch (parseError) {
-
-            throw new Error(
-                "Сервер повернув не JSON: " +
-                rawText
-            );
-        }
-
-        if (!result.success) {
+        if (!selectedDate) {
 
             setStatus(
-                result.message ||
-                "Не вдалося зберегти бронювання.",
+                "Оберіть дату 🤎",
                 "error"
             );
 
             return;
         }
 
-        await loadBookings();
+        if (!selectedTime) {
 
-        const bookedDate = selectedDate;
-        const bookedTime = selectedTime;
+            setStatus(
+                "Оберіть час уроку 🤎",
+                "error"
+            );
 
-        successText.innerHTML =
-            `Ваш урок успішно заброньовано на <b>${bookedDate}</b> о <b>${bookedTime}</b>.<br>До зустрічі у DreamVoice Vocal Studio`;
+            return;
+        }
 
-        successPopup.classList.add("show");
+        if (!name || !phone) {
 
-        nameInput.value = "";
-        phoneInput.value = "";
+            setStatus(
+                "Заповніть ім'я та телефон 🤎",
+                "error"
+            );
 
-        selectedTime = "";
+            return;
+        }
 
-        renderSlots();
-        updateSelectedInfo();
-
-        setStatus(
-            "Бронювання успішно збережено.",
-            "success"
+        const currentState = getSlotState(
+            selectedDate,
+            selectedTime
         );
 
-    } catch (error) {
+        if (currentState !== "available") {
 
-        console.error(
-            "Помилка відправки:",
-            error
-        );
+            setStatus(
+                "Цей слот уже недоступний. Оберіть інший час.",
+                "error"
+            );
 
-        setStatus(
-            "Помилка з'єднання: " +
-            error.message,
-            "error"
-        );
+            selectedTime = "";
 
-    } finally {
+            renderSlots();
+            updateSelectedInfo();
 
-        confirmBtn.disabled = false;
-        confirmBtn.textContent =
-            "Підтвердити запис";
+            return;
+        }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Збереження...";
+
+        try {
+
+            const response = await fetch(
+                API_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "text/plain;charset=utf-8"
+                    },
+
+                    body: JSON.stringify({
+                        date: selectedDate,
+                        time: selectedTime,
+                        name: name,
+                        phone: phone
+                    })
+                }
+            );
+
+            const rawText = await response.text();
+
+            console.log(
+                "RAW RESPONSE:",
+                rawText
+            );
+
+            let result;
+
+            try {
+
+                result = JSON.parse(rawText);
+
+            } catch (parseError) {
+
+                throw new Error(
+                    "Сервер повернув не JSON: " +
+                    rawText
+                );
+            }
+
+            if (!result.success) {
+
+                setStatus(
+                    result.message ||
+                    "Не вдалося зберегти бронювання.",
+                    "error"
+                );
+
+                return;
+            }
+
+            await loadBookings();
+
+            const bookedDate = selectedDate;
+            const bookedTime = selectedTime;
+
+            successText.innerHTML =
+                `Ваш урок успішно заброньовано на <b>${bookedDate}</b> о <b>${bookedTime}</b>.<br>До зустрічі у DreamVoice Vocal Studio`;
+
+            successPopup.classList.add("show");
+
+            nameInput.value = "";
+            phoneInput.value = "";
+
+            selectedTime = "";
+
+            renderSlots();
+            updateSelectedInfo();
+
+            setStatus(
+                "Бронювання успішно збережено.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Помилка відправки:",
+                error
+            );
+
+            setStatus(
+                "Помилка з'єднання: " +
+                error.message,
+                "error"
+            );
+
+        } finally {
+
+            confirmBtn.disabled = false;
+            confirmBtn.textContent =
+                "Підтвердити запис";
+        }
     }
-}
-```
-
 );
 
 // ================================
@@ -776,10 +716,7 @@ async (event) => {
 
 closePopup.addEventListener("click", () => {
 
-```
-successPopup.classList.remove("show");
-```
-
+    successPopup.classList.remove("show");
 });
 
 // ================================
@@ -787,16 +724,13 @@ successPopup.classList.remove("show");
 // ================================
 
 document.addEventListener(
-"DOMContentLoaded",
-async () => {
+    "DOMContentLoaded",
+    async () => {
 
-```
-    await loadBookings();
+        await loadBookings();
 
-    renderCalendar();
-    renderSlots();
-    updateSelectedInfo();
-}
-```
-
+        renderCalendar();
+        renderSlots();
+        updateSelectedInfo();
+    }
 );
